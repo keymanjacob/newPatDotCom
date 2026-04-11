@@ -43,4 +43,6 @@ export const SYNC_CONFIG = {
 export const API_ROUTES = {
   HEALTH: "/api/health",
   EVENTS: "/api/events",
+  TRENDS: "/api/trends",
+  ACTIVITY: "/api/activity",
 } as const;

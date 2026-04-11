@@ -11,6 +11,7 @@ import cors from "cors";
 import type { HealthResponse, ApiResponse } from "@baby-tracker/shared";
 import { initDatabase, ensureSchema } from "./db/neon.js";
 import { eventsRouter } from "./routes/events.js";
+import { trendsRouter, activityRouter } from "./routes/trends.js";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3001", 10);
@@ -50,6 +51,12 @@ app.get("/api/health", (_req, res) => {
 
 // Events — sync endpoint
 app.use("/api/events", eventsRouter);
+
+// Trends — aggregated chart data
+app.use("/api/trends", trendsRouter);
+
+// Activity — today's timeline + summary
+app.use("/api/activity", activityRouter);
 
 // ── Startup ──────────────────────────────────
 

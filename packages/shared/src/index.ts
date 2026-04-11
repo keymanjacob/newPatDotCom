@@ -17,6 +17,13 @@ export type {
   ApiResponse,
   SyncResponse,
   HealthResponse,
+  BabyProfile,
+  DailySleepData,
+  DailyFeedVolumeData,
+  DailyDiaperData,
+  TrendSummary,
+  ActivityItem,
+  TodaySummary,
 } from "./types.js";
 
 export {
@@ -27,3 +34,5 @@ export {
   SYNC_CONFIG,
   API_ROUTES,
 } from "./constants.js";
+
+export { BABY_PROFILE } from "./config.js";
