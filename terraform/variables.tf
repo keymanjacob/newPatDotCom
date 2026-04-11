@@ -1,13 +1,25 @@
 variable "resource_group_name" {
   description = "Name of the Azure Resource Group"
   type        = string
-  default     = "baby-tracker-rg"
+  default     = "rg-fan-holdings"
 }
 
 variable "location" {
   description = "Azure region to deploy resources to"
   type        = string
-  default     = "eastus"
+  default     = "centralus"
+}
+
+variable "static_web_app_location" {
+  description = "Azure region specifically for the Static Web App"
+  type        = string
+  default     = "centralus"
+}
+
+variable "api_location" {
+  description = "Azure region specifically for the Backend API"
+  type        = string
+  default     = "westus2"
 }
 
 variable "app_name" {

@@ -11,17 +11,23 @@ provider "azurerm" {
   features {}
 }
 
-# Resource Group
+# Resource Group — imported, shared with fan-api and fan-ui.
+# NEVER destroy this. lifecycle guard prevents accidental deletion
+# of existing projects in this resource group.
 resource "azurerm_resource_group" "rg" {
   name     = var.resource_group_name
   location = var.location
+
+  lifecycle {
+    prevent_destroy = true  # Protects fan-api, fan-ui, and all other projects
+  }
 }
 
 # Static Web App (Free Tier) for the React UI
 resource "azurerm_static_web_app" "ui" {
   name                = "${var.app_name}-ui"
   resource_group_name = azurerm_resource_group.rg.name
-  location            = "eastus2" # Note: SWA is only available in certain locations
+  location            = var.static_web_app_location
   sku_tier            = "Free"
   sku_size            = "Free"
 }
@@ -30,7 +36,7 @@ resource "azurerm_static_web_app" "ui" {
 resource "azurerm_storage_account" "storage" {
   name                     = replace("${var.app_name}sa", "-", "")
   resource_group_name      = azurerm_resource_group.rg.name
-  location                 = azurerm_resource_group.rg.location
+  location                 = var.api_location
   account_tier             = "Standard"
   account_replication_type = "LRS"
 }
@@ -39,7 +45,7 @@ resource "azurerm_storage_account" "storage" {
 resource "azurerm_service_plan" "asp" {
   name                = "${var.app_name}-plan"
   resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+  location            = var.api_location
   os_type             = "Linux"
   sku_name            = "Y1"
 }
@@ -48,7 +54,7 @@ resource "azurerm_service_plan" "asp" {
 resource "azurerm_linux_function_app" "api" {
   name                       = "${var.app_name}-api"
   resource_group_name        = azurerm_resource_group.rg.name
-  location                   = azurerm_resource_group.rg.location
+  location                   = var.api_location
   service_plan_id            = azurerm_service_plan.asp.id
   storage_account_name       = azurerm_storage_account.storage.name
   storage_account_access_key = azurerm_storage_account.storage.primary_access_key

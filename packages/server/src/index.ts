@@ -59,6 +59,7 @@ app.use("/api/trends", trendsRouter);
 app.use("/api/activity", activityRouter);
 
 // ── Startup ──────────────────────────────────
+export const expressApp = app;
 
 async function start() {
   try {
@@ -107,4 +108,7 @@ async function start() {
   }
 }
 
-start();
+// Only start the internal Express server if NOT running in Azure Functions
+if (!process.env.FUNCTIONS_WORKER_RUNTIME) {
+  start();
+}
