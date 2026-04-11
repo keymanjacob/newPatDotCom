@@ -25,7 +25,7 @@ export default function App() {
   // Loading state
   if (!isLoaded) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-surface-primary">
+      <div className="flex items-center justify-center min-h-screen w-full bg-surface-primary">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-3 border-accent-navy border-t-transparent rounded-full animate-spin" />
           <p className="text-text-secondary text-sm">Loading...</p>
@@ -35,7 +35,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-surface-primary flex flex-col max-w-md mx-auto relative">
+    <div className="min-h-screen w-full bg-surface-primary flex flex-col max-w-md mx-auto relative">
       {/* Active Screen */}
       {activeTab === "today" ? <TodayScreen /> : <TrendsScreen />}
 

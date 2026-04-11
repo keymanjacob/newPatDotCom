@@ -16,7 +16,7 @@ export default function TrendsScreen() {
   const { data, isLoading, error } = useTrends(period);
 
   return (
-    <div className="flex-1 overflow-y-auto hide-scrollbar pb-4">
+    <div className="flex-1 w-full overflow-y-auto hide-scrollbar pb-4">
       {/* Header with period toggle */}
       <div className="px-5 pt-6 pb-4 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-text-primary tracking-tight">

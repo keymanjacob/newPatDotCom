@@ -63,7 +63,7 @@ export default function TodayScreen() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto hide-scrollbar pb-4">
+    <div className="flex-1 w-full overflow-y-auto hide-scrollbar pb-4">
       <BabyHeader summary={summary} />
       <QuickActions onLog={handleLog} isSleeping={isSleeping} />
       <div className="mt-6">
