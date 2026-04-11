@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────
+   Baby Tracker — Design System (Ambient Silver)
+   Detailed UI styling will come later.
+   This is the base layer.
+   ────────────────────────────────────────────── */
+
+@theme {
+  /* Ambient silver palette */
+  --color-surface-primary: #F5F5F7;
+  --color-surface-card: #FFFFFF;
+  --color-surface-elevated: #FAFAFA;
+  --color-surface-muted: #E8E8ED;
+
+  --color-text-primary: #1D1D1F;
+  --color-text-secondary: #6E6E73;
+  --color-text-tertiary: #AEAEB2;
+
+  --color-accent-blue: #007AFF;
+  --color-accent-green: #34C759;
+  --color-accent-orange: #FF9500;
+  --color-accent-red: #FF3B30;
+  --color-accent-purple: #AF52DE;
+  --color-accent-teal: #5AC8FA;
+
+  --color-border-light: #D1D1D6;
+  --color-border-subtle: #E5E5EA;
+
+  /* Status indicators */
+  --color-status-online: #34C759;
+  --color-status-offline: #FF9500;
+  --color-status-syncing: #007AFF;
+}
+
+/* Base styles */
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--color-surface-primary);
+  color: var(--color-text-primary);
+  margin: 0;
+  padding: 0;
+  min-height: 100dvh;
+  overscroll-behavior: none;
+}
+
+#root {
+  min-height: 100dvh;
+}
