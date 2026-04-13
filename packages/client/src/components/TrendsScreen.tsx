@@ -7,11 +7,13 @@
 // ──────────────────────────────────────────────
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useTrends } from "../hooks/useTrends";
 import SleepSummaryChart from "./SleepSummaryChart";
 import DailyVolumeChart from "./DailyVolumeChart";
 
 export default function TrendsScreen() {
+  const { t } = useTranslation();
   const [period, setPeriod] = useState<"week" | "month">("week");
   const { data, isLoading, error } = useTrends(period);
 
@@ -20,7 +22,7 @@ export default function TrendsScreen() {
       {/* Header with period toggle */}
       <div className="px-5 pt-6 pb-4 flex items-center justify-between">
         <h1 className="text-3xl font-bold text-text-primary tracking-tight">
-          Trends
+          {t("bottomNav.trends")}
         </h1>
 
         {/* Period Toggle */}
@@ -36,7 +38,7 @@ export default function TrendsScreen() {
               }
             `}
           >
-            Week
+            {t("trends.last7Days", "Week")}
           </button>
           <button
             onClick={() => setPeriod("month")}
@@ -49,7 +51,7 @@ export default function TrendsScreen() {
               }
             `}
           >
-            Month
+            {t("trends.thisMonth", "Month")}
           </button>
         </div>
       </div>

@@ -15,6 +15,7 @@ import {
   Cell,
   LabelList,
 } from "recharts";
+import { useTranslation } from "react-i18next";
 import type { DailySleepData } from "@baby-tracker/shared";
 
 interface SleepSummaryChartProps {
@@ -25,6 +26,7 @@ const NIGHT_COLOR = "#2D2B55";
 const NAP_COLOR = "#C8C6E0";
 
 export default function SleepSummaryChart({ data }: SleepSummaryChartProps) {
+  const { t } = useTranslation();
   // Reverse for horizontal layout (bottom = Mon, top = Sun in design)
   // But Recharts renders first item at top, so keep as-is
   const chartData = data.map((d) => ({
@@ -37,10 +39,10 @@ export default function SleepSummaryChart({ data }: SleepSummaryChartProps) {
   return (
     <div className="bg-surface-card rounded-2xl border border-border-subtle p-5">
       <h3 className="text-lg font-bold text-text-primary mb-1">
-        Sleep Summary
+        {t("sleepSummary.title")}
       </h3>
       <p className="text-xs text-text-secondary mb-5">
-        Hours per day this week
+        {t("sleepSummary.subtitle", "Hours per day this week")}
       </p>
 
       <div style={{ width: "100%", height: chartData.length * 38 + 16 }}>
@@ -94,7 +96,7 @@ export default function SleepSummaryChart({ data }: SleepSummaryChartProps) {
               <LabelList
                 dataKey="total"
                 position="right"
-                formatter={(val) => `${val}h`}
+                formatter={(val) => `${val}${t("sleepSummary.hrs", "h")}`}
                 style={{
                   fontSize: 11,
                   fill: "#6E6E73",
@@ -113,14 +115,14 @@ export default function SleepSummaryChart({ data }: SleepSummaryChartProps) {
             className="w-2.5 h-2.5 rounded-full"
             style={{ backgroundColor: NIGHT_COLOR }}
           />
-          <span className="text-xs text-text-secondary">Night Sleep</span>
+          <span className="text-xs text-text-secondary">{t("sleepSummary.night")}</span>
         </div>
         <div className="flex items-center gap-2">
           <div
             className="w-2.5 h-2.5 rounded-full"
             style={{ backgroundColor: NAP_COLOR }}
           />
-          <span className="text-xs text-text-secondary">Naps</span>
+          <span className="text-xs text-text-secondary">{t("sleepSummary.naps")}</span>
         </div>
       </div>
     </div>

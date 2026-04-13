@@ -14,6 +14,7 @@ import {
   Cell,
   LabelList,
 } from "recharts";
+import { useTranslation } from "react-i18next";
 import type { DailyFeedVolumeData } from "@baby-tracker/shared";
 
 interface DailyVolumeChartProps {
@@ -31,6 +32,7 @@ const BAR_COLORS = [
 ];
 
 export default function DailyVolumeChart({ data }: DailyVolumeChartProps) {
+  const { t } = useTranslation();
   const chartData = data.map((d, i) => ({
     day: d.day,
     oz: Math.round(d.totalOz * 10) / 10,
@@ -42,10 +44,10 @@ export default function DailyVolumeChart({ data }: DailyVolumeChartProps) {
   return (
     <div className="bg-surface-card rounded-2xl border border-border-subtle p-5">
       <h3 className="text-lg font-bold text-text-primary mb-1">
-        Daily Volume
+        {t("dailyVolume.title")}
       </h3>
       <p className="text-xs text-text-secondary mb-5">
-        Formula intake (oz) this week
+        {t("dailyVolume.subtitle", "Formula intake (oz) this week")}
       </p>
 
       <div style={{ width: "100%", height: 200 }}>

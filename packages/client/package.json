@@ -13,8 +13,10 @@
   "dependencies": {
     "@baby-tracker/shared": "workspace:*",
     "dexie": "^4.0.0",
+    "i18next": "^26.0.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-i18next": "^17.0.2",
     "recharts": "^3.8.1",
     "uuid": "^11.1.0",
     "zustand": "^5.0.0"

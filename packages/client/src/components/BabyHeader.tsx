@@ -1,23 +1,34 @@
 // ──────────────────────────────────────────────
 // Baby Tracker — Baby Header
 // ──────────────────────────────────────────────
-// Displays baby name, greeting, and summary pills.
+// Displays baby name, greeting, summary pills, and language toggle.
 // ──────────────────────────────────────────────
 
 import type { TodaySummary } from "@baby-tracker/shared";
 import { BABY_PROFILE } from "@baby-tracker/shared";
+import { useTranslation } from "react-i18next";
+import LanguageToggle from "./LanguageToggle";
 
 interface BabyHeaderProps {
   summary: TodaySummary;
 }
 
-function getGreeting(): { text: string; emoji: string } {
+function getGreetingKey(): string {
   const hour = new Date().getHours();
-  if (hour < 6) return { text: "Good night", emoji: "🌙" };
-  if (hour < 12) return { text: "Good morning", emoji: "☀️" };
-  if (hour < 17) return { text: "Good afternoon", emoji: "🌤️" };
-  if (hour < 21) return { text: "Good evening", emoji: "🌇" };
-  return { text: "Good night", emoji: "🌙" };
+  if (hour < 6) return "header.goodNight";
+  if (hour < 12) return "header.goodMorning";
+  if (hour < 17) return "header.goodAfternoon";
+  if (hour < 21) return "header.goodEvening";
+  return "header.goodNight";
+}
+
+function getGreetingEmoji(): string {
+  const hour = new Date().getHours();
+  if (hour < 6) return "🌙";
+  if (hour < 12) return "☀️";
+  if (hour < 17) return "🌤️";
+  if (hour < 21) return "🌇";
+  return "🌙";
 }
 
 function BottleIcon() {
@@ -58,21 +69,28 @@ function MoonIcon() {
 }
 
 export default function BabyHeader({ summary }: BabyHeaderProps) {
-  const greeting = getGreeting();
+  const { t } = useTranslation();
+  const greetingKey = getGreetingKey();
+  const emoji = getGreetingEmoji();
 
   return (
-    <div className="px-5 pt-6 pb-4">
+    <div className="px-5 pt-6 pb-4 relative">
+      {/* Top right language toggle */}
+      <div className="absolute top-6 right-5">
+        <LanguageToggle />
+      </div>
+
       {/* Name + Greeting */}
       <div className="flex items-center gap-3 mb-4">
         <div className="w-12 h-12 rounded-full bg-accent-purple-light flex items-center justify-center">
           <MoonIcon />
         </div>
-        <div>
+        <div className="pr-16">
           <h1 className="text-2xl font-bold text-text-primary tracking-tight">
             {BABY_PROFILE.name}
           </h1>
           <p className="text-sm text-text-secondary">
-            {greeting.text} {greeting.emoji}
+            {t(greetingKey)} {emoji}
           </p>
         </div>
       </div>
@@ -82,16 +100,16 @@ export default function BabyHeader({ summary }: BabyHeaderProps) {
         {summary.lastBottleAgo && (
           <div className="flex items-center gap-2 px-4 py-2 bg-surface-card rounded-full border border-border-subtle">
             <BottleIcon />
-            <span className="text-xs text-text-secondary font-medium">
-              Last Bottle: {summary.lastBottleAgo}
+            <span className="text-xs text-text-secondary font-medium whitespace-nowrap">
+              {t("header.lastBottle")}: {summary.lastBottleAgo}
             </span>
           </div>
         )}
         {summary.lastNapAgo && (
           <div className="flex items-center gap-2 px-4 py-2 bg-surface-card rounded-full border border-border-subtle">
             <MoonIcon />
-            <span className="text-xs text-text-secondary font-medium">
-              Last Nap: {summary.lastNapAgo}
+            <span className="text-xs text-text-secondary font-medium whitespace-nowrap">
+              {t("header.lastNap")}: {summary.lastNapAgo}
             </span>
           </div>
         )}

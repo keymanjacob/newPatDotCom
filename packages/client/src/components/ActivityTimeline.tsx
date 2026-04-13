@@ -5,6 +5,7 @@
 // matching the Pencil design.
 // ──────────────────────────────────────────────
 
+import { useTranslation } from "react-i18next";
 import type { ActivityItem } from "@baby-tracker/shared";
 
 interface ActivityTimelineProps {
@@ -51,11 +52,13 @@ function formatTime(timestamp: string): string {
 export default function ActivityTimeline({
   activities,
 }: ActivityTimelineProps) {
+  const { t } = useTranslation();
+
   if (activities.length === 0) {
     return (
       <div className="px-5 py-8 text-center">
         <p className="text-text-tertiary text-sm">
-          No activities logged today. Tap a button above to get started.
+          {t("timeline.empty")}
         </p>
       </div>
     );
@@ -64,7 +67,7 @@ export default function ActivityTimeline({
   return (
     <div className="px-5 pb-4">
       <h2 className="text-base font-semibold text-text-primary mb-4 italic">
-        Today's Activity
+        {t("timeline.title")}
       </h2>
 
       <div className="relative">

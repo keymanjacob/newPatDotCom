@@ -1,0 +1,57 @@
+{
+  "header": {
+    "goodMorning": "早上好",
+    "goodAfternoon": "下午好",
+    "goodEvening": "晚上好",
+    "goodNight": "晚安",
+    "lastBottle": "上次喂奶",
+    "lastNap": "上次睡觉"
+  },
+  "bottomNav": {
+    "today": "今天",
+    "trends": "趋势"
+  },
+  "quickActions": {
+    "bottle": "喂奶",
+    "diaper": "换尿布",
+    "sleep": "睡觉",
+    "wakeUp": "醒来",
+    "add": "添加",
+    "wet": "尿湿",
+    "dirty": "便便",
+    "oz": "盎司",
+    "logEvent": "记录"
+  },
+  "timeline": {
+    "title": "今日活动",
+    "empty": "今天还没有记录。",
+    "slept": "睡觉",
+    "ate": "喝奶",
+    "diaperChange": "换尿布",
+    "wokeUp": "醒来",
+    "formula": "配方奶",
+    "breastFeed": "母乳",
+    "napStarted": "开始睡觉",
+    "diaper": "纸尿裤"
+  },
+  "sleepSummary": {
+    "title": "睡眠总结 (7天)",
+    "total": "总睡眠:",
+    "night": "夜晚",
+    "day": "白天",
+    "naps": "小睡",
+    "hrs": "小时"
+  },
+  "dailyVolume": {
+    "title": "每日奶量 (7天)",
+    "total": "总奶量:",
+    "volume": "奶量",
+    "oz": "盎司"
+  },
+  "trends": {
+    "last7Days": "最近7天",
+    "thisMonth": "本月",
+    "volume": "奶量",
+    "sleep": "睡眠"
+  }
+}

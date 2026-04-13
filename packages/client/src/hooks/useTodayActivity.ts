@@ -14,22 +14,23 @@ import type {
   SleepValue,
   DiaperValue,
 } from "@baby-tracker/shared";
+import { useTranslation } from "react-i18next";
 
-function enrichEvent(event: BabyEvent): ActivityItem {
+function enrichEvent(event: BabyEvent, t: (key: string) => string): ActivityItem {
   let label = "";
 
   if (event.type === "feed") {
     const val = event.value as FeedValue;
     label = val.amountOz
-      ? `${val.amountOz}oz ${val.method === "bottle" ? "Formula" : "Breast"}`
-      : "Breast Feed";
+      ? `${val.amountOz}${t("quickActions.oz")} ${val.method === "bottle" ? t("timeline.formula") : t("timeline.breastFeed")}`
+      : t("timeline.breastFeed");
   } else if (event.type === "sleep") {
     const val = event.value as SleepValue;
-    label = val.action === "start" ? "Nap Started" : "Woke Up";
+    label = val.action === "start" ? t("timeline.napStarted") : t("timeline.wokeUp");
   } else if (event.type === "diaper") {
     const val = event.value as DiaperValue;
-    const condLabel = val.condition.charAt(0).toUpperCase() + val.condition.slice(1);
-    label = `Diaper · ${condLabel}`;
+    const condLabel = val.condition === "wet" ? t("quickActions.wet") : t("quickActions.dirty");
+    label = `${t("timeline.diaper")} · ${condLabel}`;
   }
 
   return {
@@ -44,6 +45,7 @@ export function useTodayActivity(events: BabyEvent[]): {
   activities: ActivityItem[];
   isLoading: boolean;
 } {
+  const { t } = useTranslation();
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -58,13 +60,13 @@ export function useTodayActivity(events: BabyEvent[]): {
       .reverse()
       .sortBy("timestamp");
 
-    setActivities(todayEvents.map(enrichEvent));
+    setActivities(todayEvents.map(e => enrichEvent(e, t)));
     setIsLoading(false);
   }, []);
 
   useEffect(() => {
     loadActivities();
-  }, [loadActivities, events]);
+  }, [loadActivities, events, t]);
 
   return { activities, isLoading };
 }

@@ -1,0 +1,57 @@
+{
+  "header": {
+    "goodMorning": "Good morning",
+    "goodAfternoon": "Good afternoon",
+    "goodEvening": "Good evening",
+    "goodNight": "Good night",
+    "lastBottle": "Last Bottle",
+    "lastNap": "Last Nap"
+  },
+  "bottomNav": {
+    "today": "Today",
+    "trends": "Trends"
+  },
+  "quickActions": {
+    "bottle": "Bottle",
+    "diaper": "Diaper",
+    "sleep": "Sleep",
+    "wakeUp": "Wake Up",
+    "add": "Add",
+    "wet": "wet",
+    "dirty": "dirty",
+    "oz": "oz",
+    "logEvent": "Log this event"
+  },
+  "timeline": {
+    "title": "Today's Events",
+    "empty": "No events logged today.",
+    "slept": "Slept",
+    "ate": "Ate",
+    "diaperChange": "Diaper Change",
+    "wokeUp": "Woke Up",
+    "formula": "Formula",
+    "breastFeed": "Breast Feed",
+    "napStarted": "Nap Started",
+    "diaper": "Diaper"
+  },
+  "sleepSummary": {
+    "title": "Sleep Summary (7 Days)",
+    "total": "Total sleep:",
+    "night": "Night",
+    "day": "Day",
+    "naps": "Naps",
+    "hrs": "hrs"
+  },
+  "dailyVolume": {
+    "title": "Daily Volume (7 Days)",
+    "total": "Total intake:",
+    "volume": "Volume",
+    "oz": "oz"
+  },
+  "trends": {
+    "last7Days": "Last 7 Days",
+    "thisMonth": "This Month",
+    "volume": "Volume",
+    "sleep": "Sleep"
+  }
+}

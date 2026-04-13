@@ -3,6 +3,7 @@
 // ──────────────────────────────────────────────
 
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 export type TabId = "today" | "trends";
 
@@ -84,6 +85,8 @@ function TabButton({ active, onClick, icon, label }: TabButtonProps) {
 }
 
 export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
+  const { t } = useTranslation();
+
   return (
     <nav className="sticky bottom-0 bg-surface-card border-t border-border-subtle safe-bottom">
       <div className="max-w-md mx-auto flex items-center gap-2 p-3">
@@ -91,13 +94,13 @@ export default function BottomNav({ activeTab, onTabChange }: BottomNavProps) {
           active={activeTab === "today"}
           onClick={() => onTabChange("today")}
           icon={<SunIcon />}
-          label="Today"
+          label={t("bottomNav.today")}
         />
         <TabButton
           active={activeTab === "trends"}
           onClick={() => onTabChange("trends")}
           icon={<ChartIcon />}
-          label="Trends"
+          label={t("bottomNav.trends")}
         />
       </div>
     </nav>

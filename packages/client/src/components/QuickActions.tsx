@@ -8,6 +8,7 @@
 // ──────────────────────────────────────────────
 
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { EventType, EventValue } from "@baby-tracker/shared";
 
 interface QuickActionsProps {
@@ -52,6 +53,7 @@ function ChevronRight() {
 }
 
 export default function QuickActions({ onLog, isSleeping }: QuickActionsProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState<"bottle" | "diaper" | null>(null);
 
   const handleBottle = (oz: number) => {
@@ -95,7 +97,7 @@ export default function QuickActions({ onLog, isSleeping }: QuickActionsProps) {
               <BottleIcon />
             </span>
             <span className="text-lg font-semibold text-text-primary">
-              Bottle
+              {t("quickActions.bottle")}
             </span>
           </div>
           <span
@@ -117,14 +119,14 @@ export default function QuickActions({ onLog, isSleeping }: QuickActionsProps) {
                            text-text-primary bg-surface-primary press-scale touch-target
                            active:bg-accent-navy active:text-white transition-colors"
               >
-                {oz}oz
+                {oz}{t("quickActions.oz")}
               </button>
             ))}
             <button
               onClick={() => setExpanded(null)}
               className="text-sm text-text-tertiary font-medium px-3 py-2.5"
             >
-              Cancel
+              {t("quickActions.cancel", "Cancel")}
             </button>
           </div>
         )}
@@ -146,7 +148,7 @@ export default function QuickActions({ onLog, isSleeping }: QuickActionsProps) {
         <div className="flex items-center gap-3">
           <SleepIcon />
           <span className="text-lg font-semibold">
-            {isSleeping ? "Wake Up" : "Sleep"}
+            {isSleeping ? t("quickActions.wakeUp") : t("quickActions.sleep")}
           </span>
         </div>
         <span className="text-lg opacity-75">
@@ -165,7 +167,7 @@ export default function QuickActions({ onLog, isSleeping }: QuickActionsProps) {
               <DiaperIcon />
             </span>
             <span className="text-lg font-semibold text-text-primary">
-              Diaper
+              {t("quickActions.diaper")}
             </span>
           </div>
           <span
@@ -185,7 +187,7 @@ export default function QuickActions({ onLog, isSleeping }: QuickActionsProps) {
                          text-text-primary bg-surface-primary press-scale touch-target
                          active:bg-accent-navy active:text-white transition-colors"
             >
-              Wet
+              {t("quickActions.wet")}
             </button>
             <button
               onClick={() => handleDiaper("dirty")}
@@ -193,13 +195,13 @@ export default function QuickActions({ onLog, isSleeping }: QuickActionsProps) {
                          text-text-primary bg-surface-primary press-scale touch-target
                          active:bg-accent-navy active:text-white transition-colors"
             >
-              Dirty
+              {t("quickActions.dirty")}
             </button>
             <button
               onClick={() => setExpanded(null)}
               className="text-sm text-text-tertiary font-medium px-3 py-2.5"
             >
-              Cancel
+              {t("quickActions.cancel", "Cancel")}
             </button>
           </div>
         )}
