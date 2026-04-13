@@ -16,7 +16,8 @@ import { API_ROUTES } from "@baby-tracker/shared";
 export async function fetchTrends(
   period: "week" | "month"
 ): Promise<TrendSummary> {
-  const res = await fetch(`${API_ROUTES.TRENDS}?period=${period}`);
+  const baseUrl = import.meta.env.VITE_API_URL || "";
+  const res = await fetch(`${baseUrl}${API_ROUTES.TRENDS}?period=${period}`);
   if (!res.ok) throw new Error(`Trends fetch failed: ${res.status}`);
   const json: ApiResponse<TrendSummary> = await res.json();
   if (!json.success || !json.data) throw new Error(json.error || "Unknown error");
@@ -29,8 +30,9 @@ export async function fetchTrends(
 export async function fetchActivity(
   date?: string
 ): Promise<{ activities: ActivityItem[]; summary: TodaySummary }> {
+  const baseUrl = import.meta.env.VITE_API_URL || "";
   const params = date ? `?date=${date}` : "";
-  const res = await fetch(`${API_ROUTES.ACTIVITY}${params}`);
+  const res = await fetch(`${baseUrl}${API_ROUTES.ACTIVITY}${params}`);
   if (!res.ok) throw new Error(`Activity fetch failed: ${res.status}`);
   const json: ApiResponse<{ activities: ActivityItem[]; summary: TodaySummary }> =
     await res.json();

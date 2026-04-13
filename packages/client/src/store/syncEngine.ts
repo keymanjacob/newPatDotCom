@@ -50,8 +50,10 @@ async function syncPendingEvents(): Promise<void> {
       events: pendingEvents.map(({ sync_status: _, ...event }) => event),
     };
 
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+
     // Push to server
-    const response = await fetch(API_ROUTES.EVENTS, {
+    const response = await fetch(`${baseUrl}${API_ROUTES.EVENTS}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -86,7 +88,8 @@ async function pullEventsFromServer(): Promise<void> {
 
   try {
     console.log("📥 Pulling historical events from server...");
-    const response = await fetch(API_ROUTES.EVENTS, {
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    const response = await fetch(`${baseUrl}${API_ROUTES.EVENTS}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
