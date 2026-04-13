@@ -50,6 +50,18 @@ resource "azurerm_service_plan" "asp" {
   sku_name            = "Y1"
 }
 
+# Azure Web PubSub Service (Free Tier F1)
+# Provides the real-time WebSocket broadcast channel for cross-device sync.
+# Free tier limits: 20 concurrent connections, 20,000 messages/day.
+# A family of 4 logging ~20 events/day uses ~60 messages/day — well within limits.
+resource "azurerm_web_pubsub" "pubsub" {
+  name                = "${var.app_name}-pubsub"
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = var.api_location
+  sku                 = "Free_F1"
+  capacity            = 1
+}
+
 # Azure Linux Function App
 resource "azurerm_linux_function_app" "api" {
   name                       = "${var.app_name}-api"
@@ -74,8 +86,9 @@ resource "azurerm_linux_function_app" "api" {
   }
 
   app_settings = {
-    "FUNCTIONS_WORKER_RUNTIME" = "node"
-    "WEBSITE_NODE_DEFAULT_VERSION" = "~20"
-    "DATABASE_URL"             = var.neon_database_url
+    "FUNCTIONS_WORKER_RUNTIME"             = "node"
+    "WEBSITE_NODE_DEFAULT_VERSION"         = "~20"
+    "DATABASE_URL"                         = var.neon_database_url
+    "AZURE_WEB_PUBSUB_CONNECTION_STRING"   = azurerm_web_pubsub.pubsub.primary_connection_string
   }
 }

@@ -18,7 +18,7 @@ import type {
 // Build a static English fallback label. ActivityTimeline.getLocalizedLabel()
 // uses item.value for live translation — this label is only shown if value is absent.
 function enrichEvent(event: BabyEvent): ActivityItem {
-  let label = event.type;
+  let label: string = event.type;
 
   if (event.type === "feed") {
     const val = event.value as FeedValue;

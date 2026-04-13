@@ -12,6 +12,7 @@ import type { HealthResponse, ApiResponse } from "@baby-tracker/shared";
 import { initDatabase, ensureSchema } from "./db/neon.js";
 import { eventsRouter } from "./routes/events.js";
 import { trendsRouter, activityRouter } from "./routes/trends.js";
+import { realtimeRouter } from "./routes/realtime.js";
 
 const app = express();
 const PORT = parseInt(process.env.PORT || "3001", 10);
@@ -57,6 +58,9 @@ app.use("/api/trends", trendsRouter);
 
 // Activity — today's timeline + summary
 app.use("/api/activity", activityRouter);
+
+// Realtime — negotiate WebSocket access token for Azure Web PubSub
+app.use("/api/realtime", realtimeRouter);
 
 // ── Startup ──────────────────────────────────
 export const expressApp: express.Express = app;

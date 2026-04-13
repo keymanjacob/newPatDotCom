@@ -10,6 +10,7 @@ import type {
   SyncResponse,
 } from "@baby-tracker/shared";
 import { upsertEvents, getRecentEvents } from "../db/neon.js";
+import { broadcastEventsUpdated } from "../lib/pubsub.js";
 
 export const eventsRouter: IRouter = Router();
 
@@ -76,6 +77,12 @@ eventsRouter.post("/", async (req: Request, res: Response) => {
 
     console.log(
       `📥 Synced ${result.syncedCount} event(s): [${result.syncedIds.join(", ")}]`
+    );
+
+    // Notify other connected clients in real-time — fire-and-forget so it
+    // never delays this response. If PubSub is not configured, this no-ops.
+    broadcastEventsUpdated().catch((err) =>
+      console.warn("⚠️ PubSub broadcast failed:", err)
     );
 
     res.status(200).json(response);

@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@azure/functions": "^4.12.0",
+    "@azure/web-pubsub": "^1.2.0",
     "@baby-tracker/shared": "workspace:*",
     "@neondatabase/serverless": "^1.0.0",
     "@vendia/serverless-express": "^4.12.6",
