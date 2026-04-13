@@ -4,7 +4,9 @@ import { initReactI18next } from "react-i18next";
 import en from "./locales/en.json";
 import zh from "./locales/zh.json";
 
-// Initialization options
+// Persist language choice across page reloads
+const savedLang = localStorage.getItem("i18n-language") || "en";
+
 i18n
   .use(initReactI18next)
   .init({
@@ -12,7 +14,7 @@ i18n
       en: { translation: en },
       zh: { translation: zh },
     },
-    lng: "en", // default language
+    lng: savedLang,
     fallbackLng: "en",
     interpolation: {
       escapeValue: false, // react already safes from xss

@@ -69,9 +69,32 @@ function MoonIcon() {
 }
 
 export default function BabyHeader({ summary }: BabyHeaderProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const greetingKey = getGreetingKey();
   const emoji = getGreetingEmoji();
+
+  const formatAgo = (ts: string | null, fallback: string | null) => {
+    if (!ts) return fallback;
+    
+    // We'll reproduce the server's logic but localized
+    const past = new Date(ts);
+    const now = new Date();
+    const diffMs = now.getTime() - past.getTime();
+    const diffMinutes = Math.floor(diffMs / 60000);
+    const isZh = i18n.language.startsWith("zh");
+
+    if (diffMinutes < 1) return isZh ? "刚刚" : "just now";
+    if (diffMinutes < 60) return isZh ? `${diffMinutes}分钟前` : `${diffMinutes}m ago`;
+
+    const hours = Math.floor(diffMinutes / 60);
+    const mins = diffMinutes % 60;
+    if (mins === 0) return isZh ? `${hours}小时前` : `${hours}h ago`;
+    const decimal = Math.round((mins / 60) * 10);
+    return isZh ? `${hours}.${decimal}小时前` : `${hours}.${decimal}h ago`;
+  };
+
+  const bottleAgo = formatAgo(summary.lastBottleTimestamp, summary.lastBottleAgo);
+  const napAgo = formatAgo(summary.lastNapTimestamp, summary.lastNapAgo);
 
   return (
     <div className="px-5 pt-6 pb-4 relative">
@@ -97,19 +120,19 @@ export default function BabyHeader({ summary }: BabyHeaderProps) {
 
       {/* Summary Pills */}
       <div className="flex gap-3">
-        {summary.lastBottleAgo && (
+        {(summary.lastBottleAgo || summary.lastBottleTimestamp) && (
           <div className="flex items-center gap-2 px-4 py-2 bg-surface-card rounded-full border border-border-subtle">
             <BottleIcon />
             <span className="text-xs text-text-secondary font-medium whitespace-nowrap">
-              {t("header.lastBottle")}: {summary.lastBottleAgo}
+              {t("header.lastBottle")}: {bottleAgo}
             </span>
           </div>
         )}
-        {summary.lastNapAgo && (
+        {(summary.lastNapAgo || summary.lastNapTimestamp) && (
           <div className="flex items-center gap-2 px-4 py-2 bg-surface-card rounded-full border border-border-subtle">
             <MoonIcon />
             <span className="text-xs text-text-secondary font-medium whitespace-nowrap">
-              {t("header.lastNap")}: {summary.lastNapAgo}
+              {t("header.lastNap")}: {napAgo}
             </span>
           </div>
         )}

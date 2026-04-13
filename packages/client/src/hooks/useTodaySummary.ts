@@ -25,7 +25,9 @@ function formatTimeAgo(now: Date, past: Date): string {
 export function useTodaySummary(events: BabyEvent[]): TodaySummary {
   const [summary, setSummary] = useState<TodaySummary>({
     lastBottleAgo: null,
+    lastBottleTimestamp: null,
     lastNapAgo: null,
+    lastNapTimestamp: null,
   });
 
   const compute = useCallback(async () => {
@@ -54,9 +56,11 @@ export function useTodaySummary(events: BabyEvent[]): TodaySummary {
       lastBottleAgo: lastFeed
         ? formatTimeAgo(now, new Date(lastFeed.timestamp))
         : null,
+      lastBottleTimestamp: lastFeed ? lastFeed.timestamp : null,
       lastNapAgo: lastSleepStart
         ? formatTimeAgo(now, new Date(lastSleepStart.timestamp))
         : null,
+      lastNapTimestamp: lastSleepStart ? lastSleepStart.timestamp : null,
     });
   }, []);
 

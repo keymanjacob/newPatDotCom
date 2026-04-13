@@ -14,29 +14,30 @@ import type {
   SleepValue,
   DiaperValue,
 } from "@baby-tracker/shared";
-import { useTranslation } from "react-i18next";
 
-function enrichEvent(event: BabyEvent, t: (key: string) => string): ActivityItem {
-  let label = "";
+// Build a static English fallback label. ActivityTimeline.getLocalizedLabel()
+// uses item.value for live translation — this label is only shown if value is absent.
+function enrichEvent(event: BabyEvent): ActivityItem {
+  let label = event.type;
 
   if (event.type === "feed") {
     const val = event.value as FeedValue;
     label = val.amountOz
-      ? `${val.amountOz}${t("quickActions.oz")} ${val.method === "bottle" ? t("timeline.formula") : t("timeline.breastFeed")}`
-      : t("timeline.breastFeed");
+      ? `${val.amountOz}oz ${val.method === "bottle" ? "Formula" : "Breast Feed"}`
+      : "Breast Feed";
   } else if (event.type === "sleep") {
     const val = event.value as SleepValue;
-    label = val.action === "start" ? t("timeline.napStarted") : t("timeline.wokeUp");
+    label = val.action === "start" ? "Nap Started" : "Woke Up";
   } else if (event.type === "diaper") {
     const val = event.value as DiaperValue;
-    const condLabel = val.condition === "wet" ? t("quickActions.wet") : t("quickActions.dirty");
-    label = `${t("timeline.diaper")} · ${condLabel}`;
+    label = `Diaper · ${val.condition}`;
   }
 
   return {
     id: event.id,
     type: event.type,
     label,
+    value: event.value,
     timestamp: event.timestamp,
   };
 }
@@ -45,7 +46,6 @@ export function useTodayActivity(events: BabyEvent[]): {
   activities: ActivityItem[];
   isLoading: boolean;
 } {
-  const { t } = useTranslation();
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,13 +60,13 @@ export function useTodayActivity(events: BabyEvent[]): {
       .reverse()
       .sortBy("timestamp");
 
-    setActivities(todayEvents.map(e => enrichEvent(e, t)));
+    setActivities(todayEvents.map(e => enrichEvent(e)));
     setIsLoading(false);
   }, []);
 
   useEffect(() => {
     loadActivities();
-  }, [loadActivities, events, t]);
+  }, [loadActivities, events]);
 
   return { activities, isLoading };
 }

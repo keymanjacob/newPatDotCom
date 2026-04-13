@@ -32,12 +32,18 @@ const BAR_COLORS = [
 ];
 
 export default function DailyVolumeChart({ data }: DailyVolumeChartProps) {
-  const { t } = useTranslation();
-  const chartData = data.map((d, i) => ({
-    day: d.day,
-    oz: Math.round(d.totalOz * 10) / 10,
-    fill: BAR_COLORS[i % BAR_COLORS.length],
-  }));
+  const { t, i18n } = useTranslation();
+  const chartData = data.map((d, i) => {
+    // Generate localized day label from date string
+    const date = new Date(d.date + "T00:00:00");
+    const dayLabel = date.toLocaleDateString(i18n.language, { weekday: "short" });
+
+    return {
+      day: dayLabel,
+      oz: Math.round(d.totalOz * 10) / 10,
+      fill: BAR_COLORS[i % BAR_COLORS.length],
+    };
+  });
 
   const maxOz = Math.max(...chartData.map((d) => d.oz), 1);
 

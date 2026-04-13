@@ -19,6 +19,7 @@
     "add": "Add",
     "wet": "wet",
     "dirty": "dirty",
+    "both": "both",
     "oz": "oz",
     "logEvent": "Log this event"
   },
@@ -40,13 +41,15 @@
     "night": "Night",
     "day": "Day",
     "naps": "Naps",
-    "hrs": "hrs"
+    "hrs": "hrs",
+    "subtitle": "Hours per day this week"
   },
   "dailyVolume": {
     "title": "Daily Volume (7 Days)",
     "total": "Total intake:",
     "volume": "Volume",
-    "oz": "oz"
+    "oz": "oz",
+    "subtitle": "Formula intake (oz) this week"
   },
   "trends": {
     "last7Days": "Last 7 Days",

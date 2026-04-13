@@ -6,6 +6,7 @@ export default function LanguageToggle() {
   const toggleLanguage = () => {
     const newLang = i18n.language === "en" ? "zh" : "en";
     i18n.changeLanguage(newLang);
+    localStorage.setItem("i18n-language", newLang);
   };
 
   return (

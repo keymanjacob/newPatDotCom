@@ -152,6 +152,8 @@ export interface ActivityItem {
   type: EventType;
   /** Human-readable label e.g. "Nap Started", "4oz Formula", "Diaper · Wet" */
   label: string;
+  /** Raw data for client-side localization */
+  value?: EventValue;
   /** ISO 8601 timestamp */
   timestamp: string;
 }
@@ -160,6 +162,10 @@ export interface ActivityItem {
 export interface TodaySummary {
   /** e.g. "2.5h ago" or null if no bottle today */
   lastBottleAgo: string | null;
+  /** ISO timestamp for client-side relative calculation */
+  lastBottleTimestamp: string | null;
   /** e.g. "45m ago" or null if no nap today */
   lastNapAgo: string | null;
+  /** ISO timestamp for client-side relative calculation */
+  lastNapTimestamp: string | null;
 }

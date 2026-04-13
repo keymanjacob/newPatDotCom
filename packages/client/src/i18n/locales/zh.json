@@ -19,6 +19,7 @@
     "add": "添加",
     "wet": "尿湿",
     "dirty": "便便",
+    "both": "全部",
     "oz": "盎司",
     "logEvent": "记录"
   },
@@ -40,13 +41,15 @@
     "night": "夜晚",
     "day": "白天",
     "naps": "小睡",
-    "hrs": "小时"
+    "hrs": "小时",
+    "subtitle": "本周每日睡眠时间"
   },
   "dailyVolume": {
     "title": "每日奶量 (7天)",
     "total": "总奶量:",
     "volume": "奶量",
-    "oz": "盎司"
+    "oz": "盎司",
+    "subtitle": "本周每日奶量 (盎司)"
   },
   "trends": {
     "last7Days": "最近7天",

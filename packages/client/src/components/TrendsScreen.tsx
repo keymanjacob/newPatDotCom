@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useTrends } from "../hooks/useTrends";
 import SleepSummaryChart from "./SleepSummaryChart";
 import DailyVolumeChart from "./DailyVolumeChart";
+import LanguageToggle from "./LanguageToggle";
 
 export default function TrendsScreen() {
   const { t } = useTranslation();
@@ -25,34 +26,38 @@ export default function TrendsScreen() {
           {t("bottomNav.trends")}
         </h1>
 
-        {/* Period Toggle */}
-        <div className="flex bg-surface-muted rounded-xl p-1">
-          <button
-            onClick={() => setPeriod("week")}
-            className={`
-              px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200
-              ${
-                period === "week"
-                  ? "bg-surface-card text-text-primary shadow-sm"
-                  : "text-text-secondary"
-              }
-            `}
-          >
-            {t("trends.last7Days", "Week")}
-          </button>
-          <button
-            onClick={() => setPeriod("month")}
-            className={`
-              px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200
-              ${
-                period === "month"
-                  ? "bg-surface-card text-text-primary shadow-sm"
-                  : "text-text-secondary"
-              }
-            `}
-          >
-            {t("trends.thisMonth", "Month")}
-          </button>
+        <div className="flex items-center gap-2">
+          <LanguageToggle />
+
+          {/* Period Toggle */}
+          <div className="flex bg-surface-muted rounded-xl p-1">
+            <button
+              onClick={() => setPeriod("week")}
+              className={`
+                px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200
+                ${
+                  period === "week"
+                    ? "bg-surface-card text-text-primary shadow-sm"
+                    : "text-text-secondary"
+                }
+              `}
+            >
+              {t("trends.last7Days")}
+            </button>
+            <button
+              onClick={() => setPeriod("month")}
+              className={`
+                px-4 py-1.5 rounded-lg text-sm font-semibold transition-all duration-200
+                ${
+                  period === "month"
+                    ? "bg-surface-card text-text-primary shadow-sm"
+                    : "text-text-secondary"
+                }
+              `}
+            >
+              {t("trends.thisMonth")}
+            </button>
+          </div>
         </div>
       </div>
 

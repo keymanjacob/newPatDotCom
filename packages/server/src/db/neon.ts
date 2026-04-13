@@ -297,6 +297,7 @@ export async function getTodayActivity(
       id: row.id as string,
       type,
       label,
+      value: value as unknown as BabyEvent["value"],
       timestamp: (row.timestamp as Date).toISOString(),
     };
   });
@@ -329,8 +330,14 @@ export async function getTodaySummary(): Promise<TodaySummary> {
     lastBottleAgo: lastFeedRows.length > 0
       ? formatTimeAgo(now, new Date(lastFeedRows[0].timestamp as string))
       : null,
+    lastBottleTimestamp: lastFeedRows.length > 0
+      ? (new Date(lastFeedRows[0].timestamp as string)).toISOString()
+      : null,
     lastNapAgo: lastSleepRows.length > 0
       ? formatTimeAgo(now, new Date(lastSleepRows[0].timestamp as string))
+      : null,
+    lastNapTimestamp: lastSleepRows.length > 0
+      ? (new Date(lastSleepRows[0].timestamp as string)).toISOString()
       : null,
   };
 }

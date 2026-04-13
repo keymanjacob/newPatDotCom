@@ -26,15 +26,20 @@ const NIGHT_COLOR = "#2D2B55";
 const NAP_COLOR = "#C8C6E0";
 
 export default function SleepSummaryChart({ data }: SleepSummaryChartProps) {
-  const { t } = useTranslation();
-  // Reverse for horizontal layout (bottom = Mon, top = Sun in design)
-  // But Recharts renders first item at top, so keep as-is
-  const chartData = data.map((d) => ({
-    day: d.day,
-    night: Math.round(d.nightSleepHours * 10) / 10,
-    nap: Math.round(d.napHours * 10) / 10,
-    total: Math.round(d.totalHours * 10) / 10,
-  }));
+  const { t, i18n } = useTranslation();
+  
+  const chartData = data.map((d) => {
+    // Generate localized day label from date string
+    const date = new Date(d.date + "T00:00:00");
+    const dayLabel = date.toLocaleDateString(i18n.language, { weekday: "short" });
+
+    return {
+      day: dayLabel,
+      night: Math.round(d.nightSleepHours * 10) / 10,
+      nap: Math.round(d.napHours * 10) / 10,
+      total: Math.round(d.totalHours * 10) / 10,
+    };
+  });
 
   return (
     <div className="bg-surface-card rounded-2xl border border-border-subtle p-5">

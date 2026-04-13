@@ -40,19 +40,45 @@ function getIcon(type: string) {
   }
 }
 
-function formatTime(timestamp: string): string {
-  const d = new Date(timestamp);
-  return d.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-}
-
 export default function ActivityTimeline({
   activities,
 }: ActivityTimelineProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+
+  const getLocalizedLabel = (item: ActivityItem) => {
+    if (!item.value) return item.label;
+
+    const type = item.type;
+    const value = item.value as any;
+
+    if (type === "feed") {
+      const amount = value.amountOz;
+      const method = value.method;
+      const methodLabel = method === "bottle" ? t("timeline.formula") : t("timeline.breastFeed");
+      return amount ? `${amount}${t("quickActions.oz")} ${methodLabel}` : methodLabel;
+    } 
+    
+    if (type === "sleep") {
+      return value.action === "start" ? t("timeline.napStarted") : t("timeline.wokeUp");
+    } 
+    
+    if (type === "diaper") {
+      const condition = value.condition;
+      const condLabel = t(`quickActions.${condition}`);
+      return `${t("timeline.diaper")} · ${condLabel}`;
+    }
+
+    return item.label;
+  };
+
+  const formatTime = (ts: string) => {
+    const d = new Date(ts);
+    return d.toLocaleTimeString(i18n.language, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
 
   if (activities.length === 0) {
     return (
@@ -100,7 +126,7 @@ export default function ActivityTimeline({
                 <div className="flex items-center gap-3">
                   <span className="text-text-secondary">{getIcon(item.type)}</span>
                   <span className="text-sm font-medium text-text-primary">
-                    {item.label}
+                    {getLocalizedLabel(item)}
                   </span>
                 </div>
                 <span className="text-xs text-text-tertiary font-medium">
