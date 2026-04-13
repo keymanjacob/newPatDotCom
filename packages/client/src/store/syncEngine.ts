@@ -78,22 +78,66 @@ async function syncPendingEvents(): Promise<void> {
 }
 
 /**
+ * Pull events from the server and hydrate the local database.
+ * This ensures cross-device sync works when opening on a new device.
+ */
+async function pullEventsFromServer(): Promise<void> {
+  if (!navigator.onLine) return;
+
+  try {
+    console.log("📥 Pulling historical events from server...");
+    const response = await fetch(API_ROUTES.EVENTS, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) {
+      console.warn(`⚠️ Pull failed with status ${response.status}`);
+      return;
+    }
+
+    const result: ApiResponse<any[]> = await response.json();
+
+    if (result.success && result.data && result.data.length > 0) {
+      // The server events don't store 'sync_status', so we explicitly
+      // set them as 'synced' locally so we don't bounce them back.
+      const hydratedEvents = result.data.map((event) => ({
+        ...event,
+        sync_status: "synced" as const,
+      }));
+
+      // Upsert into IndexedDB (won't duplicate because of UUID pk)
+      await db.events.bulkPut(hydratedEvents);
+      
+      // Tell Zustand to refresh the UI
+      await useEventStore.getState().loadEvents();
+      console.log(`✅ Downloaded and merged ${hydratedEvents.length} events from cloud!`);
+    }
+  } catch (err) {
+    console.warn("⚠️ Pull attempt failed:", err);
+  }
+}
+
+/**
  * Start the background sync engine.
- * - Syncs immediately on startup (if online)
+ * - Pulls latest data from server
+ * - Syncs pending local data immediately (if online)
  * - Sets up interval-based syncing
  * - Listens for browser `online` events
  */
 export function startSyncEngine(): void {
-  // Initial sync attempt
-  syncPendingEvents();
+  // Sync strictly in order: Pull down fresh data, then Push pending data
+  pullEventsFromServer().then(() => {
+    syncPendingEvents();
+  });
 
-  // Interval-based sync
+  // Interval-based sync (Push)
   syncInterval = setInterval(syncPendingEvents, SYNC_CONFIG.SYNC_INTERVAL_MS);
 
   // Sync when coming back online
   window.addEventListener("online", () => {
     console.log("🌐 Back online — triggering sync");
-    syncPendingEvents();
+    pullEventsFromServer().then(() => syncPendingEvents());
   });
 
   window.addEventListener("offline", () => {
