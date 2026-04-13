@@ -33,7 +33,7 @@ jobs:
         run: pnpm install
 
       - name: Build Frontend
-        run: pnpm --filter @baby-tracker/client build
+        run: pnpm --filter "@baby-tracker/client..." build
 
       - name: Deploy to Azure Static Web Apps
         id: builddeploy
