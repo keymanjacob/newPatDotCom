@@ -59,7 +59,7 @@ app.use("/api/trends", trendsRouter);
 app.use("/api/activity", activityRouter);
 
 // ── Startup ──────────────────────────────────
-export const expressApp = app;
+export const expressApp: express.Express = app;
 
 async function start() {
   try {
