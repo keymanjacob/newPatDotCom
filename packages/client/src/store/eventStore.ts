@@ -1,13 +1,17 @@
 // ──────────────────────────────────────────────
 // Baby Tracker — Zustand Event Store
 // ──────────────────────────────────────────────
-// Optimistic UI: write to Dexie first, update
-// React state, then let sync engine handle the rest.
+// Write order per event:
+//   1. Dexie (IndexedDB) — instant, optimistic
+//   2. React state (Zustand) — instant, optimistic
+//   3. Network push — immediate async, non-blocking
+//   4. 30s sweep in syncEngine — catches any pushes that failed
 // ──────────────────────────────────────────────
 
 import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
 import { db } from "../db/dexie";
+import { pushEvents } from "../api";
 import type {
   BabyEvent,
   EventType,
@@ -15,20 +19,13 @@ import type {
 } from "@baby-tracker/shared";
 
 interface EventState {
-  /** Recent events loaded from Dexie (reverse chronological) */
   events: BabyEvent[];
-  /** Number of events pending sync */
   pendingCount: number;
-  /** Whether initial load from Dexie is complete */
   isLoaded: boolean;
 
-  /** Load events from Dexie (called once on app mount) */
   loadEvents: () => Promise<void>;
-  /** Add a new event — writes to Dexie immediately, no network wait */
   addEvent: (type: EventType, value: EventValue) => Promise<BabyEvent>;
-  /** Mark events as synced (called by sync engine) */
   markSynced: (ids: string[]) => Promise<void>;
-  /** Refresh pending count from Dexie */
   refreshPendingCount: () => Promise<void>;
 }
 
@@ -61,33 +58,43 @@ export const useEventStore = create<EventState>((set, get) => ({
       sync_status: "pending",
     };
 
-    // 1. Write to Dexie IMMEDIATELY (optimistic)
+    // Step 1 + 2: Write to Dexie and update React state immediately.
+    // UI reflects the change before any network round-trip.
     await db.events.add(event);
-
-    // 2. Update React state (no network wait)
     set((state) => ({
       events: [event, ...state.events].slice(0, 100),
       pendingCount: state.pendingCount + 1,
     }));
 
+    // Step 3: Fire instant network push — non-blocking.
+    // If this succeeds, mark synced right away so the 30s sweep skips it.
+    // If it fails for any reason (offline, cold-start timeout, etc.), stay
+    // pending — the sweep in syncEngine will retry automatically.
+    pushEvents([event])
+      .then(async (result) => {
+        if (result?.syncedIds.includes(event.id)) {
+          await get().markSynced([event.id]);
+        }
+      })
+      .catch(() => {
+        // Silent — sweep handles the retry.
+      });
+
     return event;
   },
 
   markSynced: async (ids) => {
-    // Bulk update in Dexie
     await db.events
       .where("id")
       .anyOf(ids)
       .modify({ sync_status: "synced" as const });
 
-    // Update React state
     set((state) => ({
       events: state.events.map((e) =>
         ids.includes(e.id) ? { ...e, sync_status: "synced" as const } : e
       ),
     }));
 
-    // Refresh pending count
     await get().refreshPendingCount();
   },
 

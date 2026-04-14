@@ -1,0 +1,52 @@
+name: Deploy API to Azure Functions
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/server/**'
+      - 'packages/shared/**'
+  workflow_dispatch:
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    name: Build and Deploy API
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install
+
+      # Build shared first — server depends on its compiled output
+      - name: Build shared package
+        run: pnpm --filter "@baby-tracker/shared" build
+
+      - name: Build server
+        run: pnpm --filter "@baby-tracker/server" build
+
+      # pnpm deploy creates a self-contained directory:
+      #   - copies dist/, host.json, package.json
+      #   - flattens node_modules (no pnpm symlinks)
+      #   - resolves @baby-tracker/shared from the workspace
+      - name: Create deployment package
+        run: pnpm --filter "@baby-tracker/server" deploy --prod ./server-deploy
+
+      - name: Deploy to Azure Functions
+        uses: Azure/functions-action@v1
+        with:
+          app-name: 'baby-tracker-app-api'
+          package: './server-deploy'
+          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}

@@ -1,144 +1,100 @@
 // ──────────────────────────────────────────────
 // Baby Tracker — Background Sync Engine
 // ──────────────────────────────────────────────
-// Two-layer sync strategy:
 //
-// Layer 1 — Push (client → server)
-//   Interval-based: flushes locally-pending events to the server
-//   every SYNC_INTERVAL_MS. Retries automatically on next tick.
+// PUSH (client → server)
+//   Primary:  eventStore.addEvent() fires an instant POST on every tap.
+//   Safety net: setInterval(sweepPendingEvents, 30s) retries any event
+//               still marked pending after a cold-start timeout or offline gap.
 //
-// Layer 2 — Pull (server → client, real-time)
-//   Azure Web PubSub WebSocket: server broadcasts {"type":"events_updated"}
-//   whenever any client saves new events. Receiving clients call
-//   pullEventsFromServer() immediately — no polling needed.
-//   Falls back gracefully to interval-only if Web PubSub is not configured.
+// PULL (server → client)
+//   Primary:  Azure Web PubSub WebSocket — server broadcasts
+//             {"type":"events_updated"} after every successful POST.
+//             Clients receive it and pull immediately (~1s latency).
+//   Safety net: setInterval(pullFromServer, 60s) — catches missed signals
+//               when the WebSocket was killed by iOS/Android battery savers,
+//               a Wi-Fi → cellular switch, or the screen locking.
+//   Also triggered: app load, tab becomes visible, browser comes back online.
 //
-// Additional pull triggers (no extra server cost):
-//   • App mount (initial hydration)
-//   • Tab becomes visible (user switches back to app)
-//   • Browser comes back online
+//   WebSocket reconnect strategy:
+//     • 503 "not configured" → feature is intentionally disabled, do not retry.
+//     • 404 / 5xx / network error → transient (deploy gap, cold start, etc.),
+//       retry with exponential backoff (3s → 6s → 12s → 24s → 30s cap).
 // ──────────────────────────────────────────────
 
 import { db } from "../db/dexie";
 import { useEventStore } from "./eventStore";
+import { pushEvents, pullEvents } from "../api";
 import {
   SYNC_CONFIG,
   API_ROUTES,
-  type SyncPayload,
   type ApiResponse,
-  type SyncResponse,
 } from "@baby-tracker/shared";
 
-// ── Push (client → server) ───────────────────
+// ── Sweep: push any events still pending after instant-push failure ───────────
 
-let syncInterval: ReturnType<typeof setInterval> | null = null;
-let isSyncing = false;
+let sweepInterval: ReturnType<typeof setInterval> | null = null;
+let isSweeping = false;
 
-async function syncPendingEvents(): Promise<void> {
-  if (isSyncing) return;
-  if (!navigator.onLine) return;
-
-  isSyncing = true;
+async function sweepPendingEvents(): Promise<void> {
+  if (isSweeping || !navigator.onLine) return;
+  isSweeping = true;
 
   try {
-    const pendingEvents = await db.events
+    const pending = await db.events
       .where("sync_status")
       .equals("pending")
       .limit(SYNC_CONFIG.BATCH_SIZE)
       .toArray();
 
-    if (pendingEvents.length === 0) return;
+    if (pending.length === 0) return;
 
-    console.log(`🔄 Syncing ${pendingEvents.length} event(s)...`);
+    console.log(`🔄 Sweeping ${pending.length} pending event(s)...`);
+    const result = await pushEvents(pending);
 
-    const payload: SyncPayload = {
-      events: pendingEvents.map(({ sync_status: _, ...event }) => event),
-    };
-
-    const baseUrl = import.meta.env.VITE_API_URL || "";
-    const response = await fetch(`${baseUrl}${API_ROUTES.EVENTS}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-      console.warn(`⚠️ Sync failed with status ${response.status}`);
-      return;
-    }
-
-    const result: ApiResponse<SyncResponse> = await response.json();
-
-    if (result.success && result.data) {
-      console.log(`✅ Synced ${result.data.syncedCount} event(s)`);
-      await useEventStore.getState().markSynced(result.data.syncedIds);
+    if (result?.syncedIds.length) {
+      console.log(`✅ Swept ${result.syncedCount} event(s)`);
+      await useEventStore.getState().markSynced(result.syncedIds);
     }
   } catch (err) {
-    console.warn("⚠️ Sync attempt failed:", err);
+    console.warn("⚠️ Sweep failed:", err);
   } finally {
-    isSyncing = false;
+    isSweeping = false;
   }
 }
 
-// ── Pull (server → client) ───────────────────
+// ── Pull: hydrate local Dexie from server ─────────────────────────────────────
 
-async function pullEventsFromServer(): Promise<void> {
-  if (!navigator.onLine) return;
+let pullInterval: ReturnType<typeof setInterval> | null = null;
 
+async function pullFromServer(): Promise<void> {
   try {
-    const baseUrl = import.meta.env.VITE_API_URL || "";
-    const response = await fetch(`${baseUrl}${API_ROUTES.EVENTS}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    });
+    const data = await pullEvents();
+    if (!data || data.length === 0) return;
 
-    if (!response.ok) {
-      console.warn(`⚠️ Pull failed with status ${response.status}`);
-      return;
-    }
-
-    const result: ApiResponse<any[]> = await response.json();
-
-    if (result.success && result.data && result.data.length > 0) {
-      const hydratedEvents = result.data.map((event) => ({
-        ...event,
-        sync_status: "synced" as const,
-      }));
-
-      await db.events.bulkPut(hydratedEvents);
-      await useEventStore.getState().loadEvents();
-      console.log(`✅ Pulled and merged ${hydratedEvents.length} event(s)`);
-    }
+    const hydrated = data.map((e) => ({ ...e, sync_status: "synced" as const }));
+    await db.events.bulkPut(hydrated);
+    await useEventStore.getState().loadEvents();
+    console.log(`✅ Pulled and merged ${hydrated.length} event(s)`);
   } catch (err) {
-    console.warn("⚠️ Pull attempt failed:", err);
+    console.warn("⚠️ Pull failed:", err);
   }
 }
 
-// ── Realtime WebSocket (Azure Web PubSub) ─────
-//
-// The server broadcasts {"type":"events_updated"} via Web PubSub after every
-// successful events POST. Clients connect directly to Web PubSub using a
-// signed URL from the negotiate endpoint — no WebSocket proxy through the
-// Functions/Express layer.
-//
-// Connection lifecycle:
-//   connect → open → [messages] → close → reconnect (exponential backoff)
-//   Pauses reconnect attempts when offline; resumes on "online" event.
+// ── Realtime WebSocket (Azure Web PubSub) ─────────────────────────────────────
 
 let ws: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-let reconnectDelay = 3_000; // ms — doubles on each failure, capped at 30s
+let reconnectDelay = 3_000;
 const MAX_RECONNECT_DELAY = 30_000;
 
 async function connectRealtime(): Promise<void> {
-  // Don't open a second connection if one is already alive
   if (
     ws &&
     (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)
   ) {
     return;
   }
-
   if (!navigator.onLine) return;
 
   try {
@@ -146,28 +102,37 @@ async function connectRealtime(): Promise<void> {
     const res = await fetch(`${baseUrl}${API_ROUTES.REALTIME_NEGOTIATE}`);
 
     if (!res.ok) {
-      // Server not configured with Web PubSub — polling-only mode, no action needed
+      if (res.status === 503) {
+        // Intentionally disabled (no connection string configured) — stop retrying.
+        console.log("ℹ️ Realtime not configured — polling-only mode");
+        return;
+      }
+      // Transient failure (404 = not deployed yet, 5xx = cold start, etc.)
+      // Retry with backoff — once the deploy lands this will self-heal.
+      console.warn(`⚠️ negotiate ${res.status} — retrying in ${reconnectDelay / 1000}s`);
+      scheduleReconnect();
       return;
     }
 
     const body: ApiResponse<{ url: string }> = await res.json();
-    if (!body.success || !body.data?.url) return;
+    if (!body.success || !body.data?.url) {
+      scheduleReconnect();
+      return;
+    }
 
-    // Native browser WebSocket — no SDK needed. The signed URL already
-    // includes the hub name and JWT via the `access_token` query param.
     ws = new WebSocket(body.data.url);
 
     ws.onopen = () => {
       console.log("🔌 Realtime connected (Azure Web PubSub)");
-      reconnectDelay = 3_000; // reset backoff on successful open
+      reconnectDelay = 3_000;
     };
 
     ws.onmessage = (event) => {
       try {
         const msg = JSON.parse(event.data as string);
         if (msg.type === "events_updated") {
-          console.log("📡 Remote change detected — pulling fresh data...");
-          pullEventsFromServer();
+          console.log("📡 Remote change — pulling...");
+          pullFromServer();
         }
       } catch {
         // Ignore malformed frames
@@ -176,15 +141,12 @@ async function connectRealtime(): Promise<void> {
 
     ws.onclose = () => {
       ws = null;
-      console.log(
-        `🔌 Realtime disconnected — reconnecting in ${reconnectDelay / 1000}s`
-      );
+      console.log(`🔌 WS closed — reconnecting in ${reconnectDelay / 1000}s`);
       scheduleReconnect();
     };
 
     ws.onerror = () => {
-      // onclose fires immediately after onerror, which schedules the reconnect
-      ws?.close();
+      ws?.close(); // onclose will fire and schedule reconnect
     };
   } catch (err) {
     console.warn("⚠️ Realtime connect failed:", err);
@@ -198,7 +160,6 @@ function scheduleReconnect(): void {
     reconnectTimer = null;
     connectRealtime();
   }, reconnectDelay);
-  // Exponential backoff: 3s → 6s → 12s → 24s → 30s (cap)
   reconnectDelay = Math.min(reconnectDelay * 2, MAX_RECONNECT_DELAY);
 }
 
@@ -211,32 +172,34 @@ function disconnectRealtime(): void {
   ws = null;
 }
 
-// ── Engine Lifecycle ──────────────────────────
+// ── Engine Lifecycle ──────────────────────────────────────────────────────────
 
 export function startSyncEngine(): void {
-  // Initial hydration: pull remote data, then flush any local-pending events
-  pullEventsFromServer().then(() => syncPendingEvents());
+  // Hydrate on load, then flush any events that were pending from a previous session.
+  pullFromServer().then(() => sweepPendingEvents());
 
-  // Open the real-time WebSocket channel
+  // Open real-time channel.
   connectRealtime();
 
-  // Interval-based push: flushes pending local events on a regular cadence.
-  // This does NOT pull — WebSocket handles that. Acts as retry for offline events.
-  syncInterval = setInterval(syncPendingEvents, SYNC_CONFIG.SYNC_INTERVAL_MS);
+  // 30s sweep — safety net for instant-push failures only (offline, cold-start).
+  sweepInterval = setInterval(sweepPendingEvents, SYNC_CONFIG.SYNC_INTERVAL_MS);
 
-  // When the tab becomes visible again, immediately refresh data and ensure
-  // the WebSocket is still alive (browsers may have suspended it in the background)
+  // 60s pull — safety net for when the WebSocket was killed by the OS
+  // (iOS/Android battery saver, screen lock, Wi-Fi↔cellular switch).
+  pullInterval = setInterval(pullFromServer, 60_000);
+
+  // Pull + reconnect when tab comes back into focus.
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
-      pullEventsFromServer();
+      pullFromServer();
       connectRealtime();
     }
   });
 
-  // Network recovery
+  // Network recovery.
   window.addEventListener("online", () => {
     console.log("🌐 Back online — syncing");
-    pullEventsFromServer().then(() => syncPendingEvents());
+    pullFromServer().then(() => sweepPendingEvents());
     connectRealtime();
   });
 
@@ -246,17 +209,15 @@ export function startSyncEngine(): void {
   });
 
   console.log(
-    `🔄 Sync engine started (push interval: ${SYNC_CONFIG.SYNC_INTERVAL_MS / 1000}s, realtime: WebSocket)`
+    `🔄 Sync engine started — sweep: ${SYNC_CONFIG.SYNC_INTERVAL_MS / 1000}s, pull fallback: 60s`
   );
 }
 
 export function stopSyncEngine(): void {
-  if (syncInterval) {
-    clearInterval(syncInterval);
-    syncInterval = null;
-  }
+  if (sweepInterval) { clearInterval(sweepInterval); sweepInterval = null; }
+  if (pullInterval)  { clearInterval(pullInterval);  pullInterval  = null; }
   disconnectRealtime();
   console.log("🔄 Sync engine stopped");
 }
 
-export { syncPendingEvents as triggerSync };
+export { sweepPendingEvents as triggerSync };
