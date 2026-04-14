@@ -14,6 +14,6 @@ import type { BabyProfile } from "./types.js";
  * and support multiple babies per household.
  */
 export const BABY_PROFILE: BabyProfile = {
-  name: "Charlie Fan",
+  name: "My Little Charlie",
   birthDate: "2026-01-15",
 };
