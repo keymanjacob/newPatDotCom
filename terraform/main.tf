@@ -93,14 +93,10 @@ resource "azurerm_linux_function_app" "api" {
     application_stack {
       node_version = "20"
     }
-    cors {
-      allowed_origins = [
-        "http://localhost:5173", # Local client
-        "http://localhost:5174",
-        "https://${azurerm_static_web_app.ui.default_host_name}" # Production client
-      ]
-      support_credentials = false
-    }
+    # CORS is handled exclusively by the Express app (cors() middleware with origin: "*").
+    # Do NOT configure CORS here — Azure Functions platform CORS adds its own
+    # Access-Control-Allow-Origin header, which duplicates the one Express sets,
+    # causing Chrome to reject all cross-origin responses with a CORS error.
   }
 
   app_settings = {

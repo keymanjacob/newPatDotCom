@@ -44,6 +44,12 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         runtimeCaching: [
           {
+            // Negotiate returns a signed WebSocket token that expires in 60 minutes.
+            // Never serve it from cache — always fetch fresh.
+            urlPattern: /\/api\/negotiate/i,
+            handler: "NetworkOnly",
+          },
+          {
             urlPattern: /^https?:\/\/.*\/api\/.*/i,
             handler: "NetworkFirst",
             options: {
