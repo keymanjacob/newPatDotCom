@@ -96,7 +96,7 @@ async function proxyToExpress(request: HttpRequest): Promise<HttpResponseInit> {
 
 // Register the wildcard route for Azure Functions handling all API traffic
 app.http('api', {
-    route: '{*segments}',
+    route: 'api/{*segments}',
     authLevel: 'anonymous',
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     handler: async (request: HttpRequest, context: InvocationContext): Promise<HttpResponseInit> => {
