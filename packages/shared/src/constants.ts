@@ -46,5 +46,5 @@ export const API_ROUTES = {
   TRENDS: "/api/trends",
   ACTIVITY: "/api/activity",
   /** Returns a signed WSS URL for direct WebSocket connection to Azure Web PubSub */
-  REALTIME_NEGOTIATE: "/api/realtime/negotiate",
+  REALTIME_NEGOTIATE: "/api/negotiate",
 } as const;

@@ -60,7 +60,7 @@ app.use("/api/trends", trendsRouter);
 app.use("/api/activity", activityRouter);
 
 // Realtime — negotiate WebSocket access token for Azure Web PubSub
-app.use("/api/realtime", realtimeRouter);
+app.use("/api/negotiate", realtimeRouter);
 
 // ── Startup ──────────────────────────────────
 export const expressApp: express.Express = app;

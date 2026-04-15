@@ -24,3 +24,9 @@ output "web_pubsub_connection_string" {
   value       = azurerm_web_pubsub.pubsub.primary_connection_string
   sensitive   = true
 }
+
+output "application_insights_connection_string" {
+  description = "Application Insights connection string — already injected into Function App"
+  value       = azurerm_application_insights.insights.connection_string
+  sensitive   = true
+}

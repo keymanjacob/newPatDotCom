@@ -4,7 +4,7 @@
 // Provides a negotiate endpoint so clients can establish
 // a direct WebSocket connection to Azure Web PubSub.
 //
-// GET /api/realtime/negotiate
+// GET /api/negotiate
 //   → Returns a signed WSS URL valid for 60 minutes.
 //   → Clients connect natively: new WebSocket(url)
 //   → No client SDK required.
@@ -17,7 +17,7 @@ import { generateClientAccessUrl, isPubSubConfigured } from "../lib/pubsub.js";
 
 export const realtimeRouter: IRouter = Router();
 
-realtimeRouter.get("/negotiate", async (_req: Request, res: Response) => {
+realtimeRouter.get("/", async (_req: Request, res: Response) => {
   if (!isPubSubConfigured()) {
     const response: ApiResponse = {
       success: false,
