@@ -1,52 +1,71 @@
-name: Deploy API to Azure Functions
+name: Deploy Container API
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'packages/server/**'
+      - 'packages/server-container/**'
       - 'packages/shared/**'
   workflow_dispatch:
 
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/baby-tracker-api
+  CONTAINER_APP_NAME: baby-tracker-app-container
+  RESOURCE_GROUP: rg-fan-holdings
+
 jobs:
-  build_and_deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    name: Build and Deploy API
+    name: Build, Push, Deploy
+
+    # Required for GITHUB_TOKEN to push to GHCR
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Install Node.js
-        uses: actions/setup-node@v3
+      # ── Build & push Docker image ───────────────────────────────────────────
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
         with:
-          node-version: '20'
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Build context is the monorepo root so the Dockerfile can reach packages/shared
+      - name: Build and push image
+        uses: docker/build-push-action@v5
         with:
-          version: 9
+          context: .
+          file: packages/server-container/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          # Layer cache via GHCR — keeps CI builds fast
+          cache-from: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache
+          cache-to: type=registry,ref=${{ env.IMAGE_NAME }}:buildcache,mode=max
 
-      - name: Install dependencies
-        run: pnpm install
+      # ── Deploy to Azure Container Apps ──────────────────────────────────────
 
-      # Build shared first — server depends on its compiled output
-      - name: Build shared package
-        run: pnpm --filter "@baby-tracker/shared" build
-
-      - name: Build server
-        run: pnpm --filter "@baby-tracker/server" build
-
-      # pnpm deploy creates a self-contained directory:
-      #   - copies dist/, host.json, package.json
-      #   - flattens node_modules (no pnpm symlinks)
-      #   - resolves @baby-tracker/shared from the workspace
-      - name: Create deployment package
-        run: pnpm --filter "@baby-tracker/server" deploy --prod ./server-deploy
-
-      - name: Deploy to Azure Functions
-        uses: Azure/functions-action@v1
+      - name: Azure login
+        uses: azure/login@v2
         with:
-          app-name: 'baby-tracker-app-api'
-          package: './server-deploy'
-          publish-profile: ${{ secrets.AZURE_FUNCTIONAPP_PUBLISH_PROFILE }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # Create a new revision of the Container App pointing at the just-pushed image.
+      # Pinning to the commit SHA (not :latest) guarantees reproducibility —
+      # rolling back is `az containerapp revision activate --name <prev-revision>`.
+      - name: Update Container App
+        run: |
+          az containerapp update \
+            --name "${{ env.CONTAINER_APP_NAME }}" \
+            --resource-group "${{ env.RESOURCE_GROUP }}" \
+            --image "${{ env.IMAGE_NAME }}:${{ github.sha }}"

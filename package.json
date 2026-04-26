@@ -6,7 +6,6 @@
   "scripts": {
     "dev": "turbo run dev",
     "dev:container": "turbo run dev --filter=@baby-tracker/client --filter=@baby-tracker/server-container",
-    "dev:functions": "turbo run dev --filter=@baby-tracker/client --filter=@baby-tracker/server",
     "build": "turbo run build",
     "lint": "turbo run lint",
     "clean": "turbo run clean && rm -rf node_modules"

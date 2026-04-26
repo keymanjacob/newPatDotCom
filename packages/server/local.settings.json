@@ -1,9 +1,0 @@
-{
-  "IsEncrypted": false,
-  "Values": {
-    "FUNCTIONS_WORKER_RUNTIME": "node",
-    "AzureWebJobsFeatureFlags": "EnableWorkerIndexing",
-    "DATABASE_URL": "",
-    "AZURE_WEB_PUBSUB_CONNECTION_STRING": ""
-  }
-}
