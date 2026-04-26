@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+**/dist
+**/.turbo
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+**/local.settings.json
+**/terraform
+**/.git
+**/.github
+**/README.md
+**/ARCHITECTURE.md
+**/confidential_deployment_plan.md

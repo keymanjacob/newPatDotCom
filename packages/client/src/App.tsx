@@ -7,7 +7,7 @@
 
 import { useEffect, useState } from "react";
 import { useEventStore } from "./store/eventStore";
-import { startSyncEngine } from "./store/syncEngine";
+import { startSyncEngine, stopSyncEngine } from "./store/syncEngine";
 import BottomNav, { type TabId } from "./components/BottomNav";
 import TodayScreen from "./components/TodayScreen";
 import TrendsScreen from "./components/TrendsScreen";
@@ -16,10 +16,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>("today");
   const { isLoaded, loadEvents } = useEventStore();
 
-  // Load events from Dexie + start sync engine on mount
+  // Load events from Dexie + start sync engine on mount.
+  // Cleanup is required — React 18 StrictMode runs effects twice in dev
+  // (mount → unmount → remount). Without stopSyncEngine() here, two full
+  // engines run in parallel, doubling every interval and API call.
   useEffect(() => {
     loadEvents();
     startSyncEngine();
+    return () => stopSyncEngine();
   }, [loadEvents]);
 
   // Loading state

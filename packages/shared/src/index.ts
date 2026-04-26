@@ -24,6 +24,7 @@ export type {
   TrendSummary,
   ActivityItem,
   TodaySummary,
+  DeltaPullResponse,
 } from "./types.js";
 
 export {

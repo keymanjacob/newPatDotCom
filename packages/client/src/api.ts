@@ -13,6 +13,7 @@ import type {
   BabyEvent,
   SyncPayload,
   SyncResponse,
+  DeltaPullResponse,
 } from "@baby-tracker/shared";
 import { API_ROUTES } from "@baby-tracker/shared";
 
@@ -69,21 +70,23 @@ export async function pushEvents(
   return json.success && json.data ? json.data : null;
 }
 
-// ── Events: Pull ─────────────────────────────
+// ── Events: Pull (delta sync) ─────────────────
+//
+// Sends ?since=<lastSyncedAt> so the server returns only rows that changed
+// after the client's last successful pull. Payload size stays near-constant
+// regardless of total history depth (PRD delta sync fix).
+//
+// `since` should be the `serverTime` value returned by the previous pull.
+// On first load / cache miss, omit `since` — server defaults to last 24h.
 
-/**
- * GET all recent events from the server.
- * Returns the raw server array (without sync_status), or null on failure.
- * Callers must stamp sync_status: "synced" before writing to Dexie.
- */
-export async function pullEvents(): Promise<Omit<BabyEvent, "sync_status">[] | null> {
+export async function pullEvents(since?: string): Promise<DeltaPullResponse | null> {
   if (!navigator.onLine) return null;
   const baseUrl = import.meta.env.VITE_API_URL || "";
-  const res = await fetch(`${baseUrl}${API_ROUTES.EVENTS}`, {
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
+  const url = since
+    ? `${baseUrl}${API_ROUTES.EVENTS}?since=${encodeURIComponent(since)}`
+    : `${baseUrl}${API_ROUTES.EVENTS}`;
+  const res = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
   if (!res.ok) return null;
-  const json: ApiResponse<Omit<BabyEvent, "sync_status">[]> = await res.json();
+  const json: ApiResponse<DeltaPullResponse> = await res.json();
   return json.success && json.data ? json.data : null;
 }

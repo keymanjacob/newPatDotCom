@@ -116,6 +116,43 @@ importers:
         specifier: ^5.8.0
         version: 5.9.3
 
+  packages/server-container:
+    dependencies:
+      '@azure/web-pubsub':
+        specifier: ^1.2.0
+        version: 1.2.0
+      '@baby-tracker/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@neondatabase/serverless':
+        specifier: ^1.0.0
+        version: 1.0.2
+      cors:
+        specifier: ^2.8.5
+        version: 2.8.6
+      dotenv:
+        specifier: ^16.4.0
+        version: 16.6.1
+      express:
+        specifier: ^5.1.0
+        version: 5.2.1
+    devDependencies:
+      '@types/cors':
+        specifier: ^2.8.17
+        version: 2.8.19
+      '@types/express':
+        specifier: ^5.0.0
+        version: 5.0.6
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.17
+      tsx:
+        specifier: ^4.19.0
+        version: 4.21.0
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+
   packages/shared:
     devDependencies:
       typescript:

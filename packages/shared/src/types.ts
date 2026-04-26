@@ -158,6 +158,18 @@ export interface ActivityItem {
   timestamp: string;
 }
 
+/**
+ * Response from GET /api/events?since=<ISO>
+ * Carries only the events that changed since the client's last pull,
+ * plus the server's current time so the client can use it as `since`
+ * on the next request (avoids relying on the client clock).
+ */
+export interface DeltaPullResponse {
+  events: Omit<BabyEvent, "sync_status">[];
+  /** ISO 8601 — store as lastSyncedAt and send as ?since= next pull */
+  serverTime: string;
+}
+
 /** Summary stats displayed in the Today header pills */
 export interface TodaySummary {
   /** e.g. "2.5h ago" or null if no bottle today */

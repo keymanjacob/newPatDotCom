@@ -7,19 +7,21 @@
 //   Safety net: setInterval(sweepPendingEvents, 30s) retries any event
 //               still marked pending after a cold-start timeout or offline gap.
 //
-// PULL (server → client)
+// PULL (server → client) — DELTA SYNC
+//   The client persists `lastSyncedAt` in localStorage. Every pull sends
+//   GET /api/events?since=<lastSyncedAt> and receives only changed rows.
+//   On success, `serverTime` from the response becomes the new lastSyncedAt.
+//   On first load / cache miss, `since` is omitted → server defaults to 24h.
+//
 //   Primary:  Azure Web PubSub WebSocket — server broadcasts
 //             {"type":"events_updated"} after every successful POST.
 //             Clients receive it and pull immediately (~1s latency).
-//   Safety net: setInterval(pullFromServer, 60s) — catches missed signals
-//               when the WebSocket was killed by iOS/Android battery savers,
-//               a Wi-Fi → cellular switch, or the screen locking.
+//   Safety net: setInterval(pullFromServer, 60s) — catches missed signals.
 //   Also triggered: app load, tab becomes visible, browser comes back online.
 //
 //   WebSocket reconnect strategy:
-//     • 503 "not configured" → feature is intentionally disabled, do not retry.
-//     • 404 / 5xx / network error → transient (deploy gap, cold start, etc.),
-//       retry with exponential backoff (3s → 6s → 12s → 24s → 30s cap).
+//     • 503 "not configured" → polling-only mode, stop retrying.
+//     • 404 / 5xx / network error → exponential backoff (3s → 30s cap).
 // ──────────────────────────────────────────────
 
 import { db } from "../db/dexie";
@@ -30,6 +32,18 @@ import {
   API_ROUTES,
   type ApiResponse,
 } from "@baby-tracker/shared";
+
+// ── lastSyncedAt — persisted across page loads ────────────────────────────────
+
+const LAST_SYNCED_KEY = "baby_tracker_last_synced_at";
+
+function getLastSyncedAt(): string | undefined {
+  return localStorage.getItem(LAST_SYNCED_KEY) ?? undefined;
+}
+
+function setLastSyncedAt(serverTime: string): void {
+  localStorage.setItem(LAST_SYNCED_KEY, serverTime);
+}
 
 // ── Sweep: push any events still pending after instant-push failure ───────────
 
@@ -63,19 +77,28 @@ async function sweepPendingEvents(): Promise<void> {
   }
 }
 
-// ── Pull: hydrate local Dexie from server ─────────────────────────────────────
+// ── Pull: delta-hydrate local Dexie from server ───────────────────────────────
 
 let pullInterval: ReturnType<typeof setInterval> | null = null;
 
 async function pullFromServer(): Promise<void> {
   try {
-    const data = await pullEvents();
-    if (!data || data.length === 0) return;
+    const since = getLastSyncedAt();
+    const result = await pullEvents(since);
+    if (!result) return;
 
-    const hydrated = data.map((e) => ({ ...e, sync_status: "synced" as const }));
-    await db.events.bulkPut(hydrated);
-    await useEventStore.getState().loadEvents();
-    console.log(`✅ Pulled and merged ${hydrated.length} event(s)`);
+    const { events, serverTime } = result;
+
+    if (events.length > 0) {
+      const hydrated = events.map((e) => ({ ...e, sync_status: "synced" as const }));
+      await db.events.bulkPut(hydrated);
+      await useEventStore.getState().loadEvents();
+      console.log(`✅ Delta pull: merged ${hydrated.length} event(s) (since=${since ?? "24h ago"})`);
+    }
+
+    // Always advance the cursor — even a zero-row response proves the server
+    // had nothing new up to serverTime, so we can skip that window next time.
+    setLastSyncedAt(serverTime);
   } catch (err) {
     console.warn("⚠️ Pull failed:", err);
   }
@@ -103,12 +126,9 @@ async function connectRealtime(): Promise<void> {
 
     if (!res.ok) {
       if (res.status === 503) {
-        // Intentionally disabled (no connection string configured) — stop retrying.
         console.log("ℹ️ Realtime not configured — polling-only mode");
         return;
       }
-      // Transient failure (404 = not deployed yet, 5xx = cold start, etc.)
-      // Retry with backoff — once the deploy lands this will self-heal.
       console.warn(`⚠️ negotiate ${res.status} — retrying in ${reconnectDelay / 1000}s`);
       scheduleReconnect();
       return;
@@ -131,7 +151,7 @@ async function connectRealtime(): Promise<void> {
       try {
         const msg = JSON.parse(event.data as string);
         if (msg.type === "events_updated") {
-          console.log("📡 Remote change — pulling...");
+          console.log("📡 Remote change — delta pulling...");
           pullFromServer();
         }
       } catch {
@@ -146,7 +166,7 @@ async function connectRealtime(): Promise<void> {
     };
 
     ws.onerror = () => {
-      ws?.close(); // onclose will fire and schedule reconnect
+      ws?.close();
     };
   } catch (err) {
     console.warn("⚠️ Realtime connect failed:", err);
@@ -175,20 +195,17 @@ function disconnectRealtime(): void {
 // ── Engine Lifecycle ──────────────────────────────────────────────────────────
 
 export function startSyncEngine(): void {
-  // Hydrate on load, then flush any events that were pending from a previous session.
+  // Delta pull on load, then flush any pending events from prior session.
   pullFromServer().then(() => sweepPendingEvents());
 
-  // Open real-time channel.
   connectRealtime();
 
-  // 30s sweep — safety net for instant-push failures only (offline, cold-start).
+  // 30s sweep — safety net for instant-push failures only.
   sweepInterval = setInterval(sweepPendingEvents, SYNC_CONFIG.SYNC_INTERVAL_MS);
 
-  // 60s pull — safety net for when the WebSocket was killed by the OS
-  // (iOS/Android battery saver, screen lock, Wi-Fi↔cellular switch).
+  // 60s poll — safety net for when the WebSocket was killed by the OS.
   pullInterval = setInterval(pullFromServer, 60_000);
 
-  // Pull + reconnect when tab comes back into focus.
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
       pullFromServer();
@@ -196,7 +213,6 @@ export function startSyncEngine(): void {
     }
   });
 
-  // Network recovery.
   window.addEventListener("online", () => {
     console.log("🌐 Back online — syncing");
     pullFromServer().then(() => sweepPendingEvents());
@@ -209,7 +225,7 @@ export function startSyncEngine(): void {
   });
 
   console.log(
-    `🔄 Sync engine started — sweep: ${SYNC_CONFIG.SYNC_INTERVAL_MS / 1000}s, pull fallback: 60s`
+    `🔄 Sync engine started — sweep: ${SYNC_CONFIG.SYNC_INTERVAL_MS / 1000}s, poll: 60s, delta: enabled`
   );
 }
 

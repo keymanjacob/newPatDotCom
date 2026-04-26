@@ -1,0 +1,30 @@
+{
+  "name": "@baby-tracker/server-container",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist *.tsbuildinfo",
+    "lint": "tsc --noEmit",
+    "docker:build": "docker build -f Dockerfile -t baby-tracker-api ../../",
+    "docker:run": "docker run -p 3001:3001 --env-file .env baby-tracker-api"
+  },
+  "dependencies": {
+    "@azure/web-pubsub": "^1.2.0",
+    "@baby-tracker/shared": "workspace:*",
+    "@neondatabase/serverless": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.0",
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.0"
+  }
+}
