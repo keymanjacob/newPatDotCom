@@ -5,7 +5,11 @@
 // Azure sets process.env.PORT automatically.
 // ──────────────────────────────────────────────
 
-import "dotenv/config";
+import { config as loadEnv } from "dotenv";
+import { resolve, dirname } from "path";
+import { fileURLToPath } from "url";
+loadEnv({ path: resolve(dirname(fileURLToPath(import.meta.url)), "../.env") });
+
 import express from "express";
 import cors from "cors";
 import type { HealthResponse, ApiResponse } from "@baby-tracker/shared";
