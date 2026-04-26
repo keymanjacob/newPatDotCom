@@ -1,1 +1,0 @@
-neon_database_url = "postgresql://neondb_owner:npg_De67hkVXFEUN@ep-crimson-hill-aagamgd3-pooler.westus3.azure.neon.tech/neondb?sslmode=require&channel_binding=require"  

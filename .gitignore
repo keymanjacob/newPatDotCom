@@ -34,6 +34,7 @@ pnpm-debug.log*
 *.tfstate
 *.tfstate.backup
 .terraform.tfstate.lock.info
+terraform/terraform.tfvars
 
 # Deployment Plan
 confidential_deployment_plan.md
