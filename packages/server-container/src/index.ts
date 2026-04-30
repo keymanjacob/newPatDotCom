@@ -15,6 +15,7 @@ loadEnv({ path: resolve(dirname(fileURLToPath(import.meta.url)), "../.env") });
 
 import express from "express";
 import cors from "cors";
+import morgan from "morgan";
 import type { HealthResponse, ApiResponse } from "@baby-tracker/shared";
 import { initDatabase, ensureSchema } from "./db/neon.js";
 import { eventsRouter } from "./routes/events.js";
@@ -25,6 +26,8 @@ const app = express();
 const PORT = parseInt(process.env.PORT || "3001", 10);
 
 // ── Middleware ────────────────────────────────
+
+app.use(morgan("combined"));
 
 const corsOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
