@@ -41,24 +41,19 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Force the new SW to activate immediately without waiting for all
+        // tabs to close — eliminates the stale-bundle window on updates.
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         runtimeCaching: [
           {
-            // Negotiate returns a signed WebSocket token that expires in 60 minutes.
-            // Never serve it from cache — always fetch fresh.
-            urlPattern: /\/api\/negotiate/i,
+            // All /api/* requests go straight to the network — no caching.
+            // POST events must never be served from cache; negotiate tokens
+            // expire in 60 min. NetworkOnly on all API calls keeps the SW
+            // from interfering with the sync engine's own retry logic.
+            urlPattern: ({ url }) => url.pathname.startsWith("/api/"),
             handler: "NetworkOnly",
-          },
-          {
-            urlPattern: /^https?:\/\/.*\/api\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "api-cache",
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 60 * 60 * 24, // 24 hours
-              },
-            },
           },
         ],
       },
