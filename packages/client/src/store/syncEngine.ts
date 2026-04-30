@@ -192,11 +192,28 @@ function disconnectRealtime(): void {
   ws = null;
 }
 
+// ── Keepalive: prevent scale-to-zero while app is open ───────────────────────
+
+let keepaliveInterval: ReturnType<typeof setInterval> | null = null;
+
+async function pingServer(): Promise<void> {
+  if (!navigator.onLine) return;
+  try {
+    const baseUrl = import.meta.env.VITE_API_URL || "";
+    await fetch(`${baseUrl}/api/health`, { method: "GET" });
+  } catch {
+    // Silently ignore — if the server is cold-starting this will wake it;
+    // the 60s pull interval will pick up data once it's ready.
+  }
+}
+
 // ── Engine Lifecycle ──────────────────────────────────────────────────────────
 
 export function startSyncEngine(): void {
-  // Delta pull on load, then flush any pending events from prior session.
-  pullFromServer().then(() => sweepPendingEvents());
+  // Wake the server immediately (may be cold-starting after idle).
+  // Pull 10s later to give it time to start, then sweep pending events.
+  pingServer();
+  setTimeout(() => pullFromServer().then(() => sweepPendingEvents()), 10_000);
 
   connectRealtime();
 
@@ -205,6 +222,10 @@ export function startSyncEngine(): void {
 
   // 60s poll — safety net for when the WebSocket was killed by the OS.
   pullInterval = setInterval(pullFromServer, 60_000);
+
+  // 4-min keepalive — prevents scale-to-zero while the app is open.
+  // Free alternative to min_replicas=1 (~$14/mo savings).
+  keepaliveInterval = setInterval(pingServer, 4 * 60_000);
 
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) {
@@ -230,8 +251,9 @@ export function startSyncEngine(): void {
 }
 
 export function stopSyncEngine(): void {
-  if (sweepInterval) { clearInterval(sweepInterval); sweepInterval = null; }
-  if (pullInterval)  { clearInterval(pullInterval);  pullInterval  = null; }
+  if (sweepInterval)     { clearInterval(sweepInterval);     sweepInterval     = null; }
+  if (pullInterval)      { clearInterval(pullInterval);      pullInterval      = null; }
+  if (keepaliveInterval) { clearInterval(keepaliveInterval); keepaliveInterval = null; }
   disconnectRealtime();
   console.log("🔄 Sync engine stopped");
 }

@@ -95,7 +95,7 @@ resource "azurerm_container_app" "api" {
   }
 
   template {
-    min_replicas = 0  # Scale to zero when idle
+    min_replicas = 0  # Scale to zero when idle — client keepalive keeps it warm while app is open
     max_replicas = 2
 
     container {
